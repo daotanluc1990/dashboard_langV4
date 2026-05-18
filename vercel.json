@@ -1,0 +1,11 @@
+{
+  "framework": "nextjs",
+  "installCommand": "npm install --no-package-lock --no-audit --no-fund --legacy-peer-deps",
+  "buildCommand": "npm run build",
+  "crons": [
+    {
+      "path": "/api/cron/telegram",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}
