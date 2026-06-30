@@ -11,7 +11,7 @@ export type TabId =
   | 'customer'
   | 'expansion';
 
-export type PeriodKey = 'today' | 'thisWeek' | 'thisMonth' | 'thisYear' | 'custom';
+export type PeriodKey = 'latestMonth' | 'today' | 'thisWeek' | 'thisMonth' | 'thisYear' | 'custom';
 export type CompareMode = 'none' | 'previousPeriod' | 'previousMonth' | 'previousYear';
 
 export interface DashboardFilters {
@@ -41,14 +41,14 @@ export interface ChartDataset {
   dataKey: string;
   type?: 'bar' | 'line';
   axis?: 'left' | 'right';
-  role?: 'primary' | 'success' | 'warning' | 'danger' | 'muted' | 'blue';
+  role?: 'primary' | 'success' | 'warning' | 'danger' | 'muted';
 }
 
 export interface DashboardWidget {
   id: string;
   title: string;
   subtitle?: string;
-  type: 'line' | 'bar' | 'combo' | 'stacked' | 'pie' | 'table' | 'alertTable' | 'empty';
+  type: 'line' | 'bar' | 'combo' | 'pie' | 'table' | 'alertTable' | 'empty' | 'stackedBar';
   className?: string;
   data?: Array<Record<string, any>>;
   datasets?: ChartDataset[];

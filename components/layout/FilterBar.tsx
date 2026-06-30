@@ -5,7 +5,7 @@ export function FilterBar({ filters, onChange }: { filters: DashboardFilters; on
   return (
     <section className="filters">
       <div className="filter-grid">
-        <div className="f"><label>Kỳ</label><select value={filters.period} onChange={e=>set({period:e.target.value as any})}><option value="today">Hôm nay</option><option value="thisWeek">Tuần này</option><option value="thisMonth">Tháng này</option><option value="thisYear">Năm nay</option><option value="custom">Tùy chọn</option></select></div>
+        <div className="f"><label>Kỳ</label><select value={filters.period} onChange={e=>set({period:e.target.value as any})}><option value="latestMonth">Tháng dữ liệu mới nhất</option><option value="today">Hôm nay</option><option value="thisWeek">Tuần này</option><option value="thisMonth">Tháng này</option><option value="thisYear">Năm nay</option><option value="custom">Tùy chọn</option></select></div>
         <div className="f"><label>Từ ngày</label><input type="date" value={filters.startDate || ''} onChange={e=>set({startDate:e.target.value})}/></div>
         <div className="f"><label>Đến ngày</label><input type="date" value={filters.endDate || ''} onChange={e=>set({endDate:e.target.value})}/></div>
         <div className="f"><label>So sánh</label><select value={filters.compareMode} onChange={e=>set({compareMode:e.target.value as any})}><option value="none">Không so sánh</option><option value="previousPeriod">Kỳ trước</option><option value="previousMonth">Cùng kỳ tháng trước</option><option value="previousYear">Cùng kỳ năm trước</option></select></div>
