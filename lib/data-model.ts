@@ -14,6 +14,7 @@ export interface SaleRow {
   portions: number;
   boxes: number;
   plates: number;
+  dishes: number;
   cogs: number;
   labor: number;
   cash: number;
@@ -66,9 +67,22 @@ export interface Context {
   targets: { revenue: number };
 }
 
-function dateRangeFromFilters(filters: DashboardFilters): { start: Date; end: Date } {
+function latestSalesMonthRange(rows: SaleRow[]): { start: Date; end: Date } | null {
+  const latest = rows.reduce<Date | null>((max, row) => {
+    if (!row.date) return max;
+    return !max || row.date.getTime() > max.getTime() ? row.date : max;
+  }, null);
+  if (!latest) return null;
+  return {
+    start: new Date(latest.getFullYear(), latest.getMonth(), 1),
+    end: new Date(latest.getFullYear(), latest.getMonth() + 1, 0)
+  };
+}
+
+function dateRangeFromFilters(filters: DashboardFilters, salesRows: SaleRow[] = []): { start: Date; end: Date } {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (filters.period === 'latestMonth') return latestSalesMonthRange(salesRows) || { start: new Date(today.getFullYear(), today.getMonth(), 1), end: today };
   if (filters.period === 'today') return { start: today, end: today };
   if (filters.period === 'thisWeek') {
     const day = today.getDay() || 7;
@@ -114,16 +128,31 @@ function between(d: Date | null, start: Date, end: Date): boolean {
   return t >= start.getTime() && t <= end.getTime();
 }
 
+function normalizeChannelName(value: unknown): string {
+  const raw = String(value || '').trim();
+  const key = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  if (!key) return '';
+  if (key.includes('tien mat') || key === 'cash') return 'Tiền mặt';
+  if (key.includes('chuyen khoan') || key.includes('bank') || key.includes('momo') || key === 'ck') return 'Chuyển khoản';
+  if (key.includes('grab')) return 'Grab';
+  if (key.includes('shopee')) return 'Shopee';
+  if (key === 'be' || key.includes('befood') || key.includes('be food')) return 'Be';
+  if (key.includes('xanh')) return 'Xanh ngon';
+  if (key.includes('takeaway') || key.includes('mang di') || key.includes('take away')) return 'Takeaway';
+  return raw;
+}
+
 function channelFromRow(row: Record<string, any>): string {
-  const direct = String(pick(row, ['Kênh', 'Kênh bán', 'Channel']) || '').trim();
+  const direct = normalizeChannelName(pick(row, ['Kênh', 'Kênh bán', 'Channel']));
   if (direct) return direct;
   const vals = [
     ['Grab', toNumber(pick(row, ['Grab_TH', 'Grab', 'GrabFood']))],
     ['Shopee', toNumber(pick(row, ['Shopee_TH', 'Shopee', 'ShopeeFood']))],
-    ['Be', toNumber(pick(row, ['Be_TH', 'Be']))],
-    ['Xanh', toNumber(pick(row, ['Xanh_TH', 'Xanh', 'Xanh SM', 'XanhSM']))],
+    ['Be', toNumber(pick(row, ['Be_TH', 'Be', 'BeFood', 'Be Food']))],
+    ['Xanh ngon', toNumber(pick(row, ['Xanh ngon', 'Xanh Ngon', 'Xanh_Ngon', 'XanhNgon', 'Xanh_TH', 'Xanh', 'Xanh SM']))],
     ['Tiền mặt', toNumber(pick(row, ['Tiền Mặt', 'Tien Mat', 'Cash']))],
-    ['Chuyển khoản', toNumber(pick(row, ['Chuyển khoản', 'Chuyen khoan', 'MoMo', 'Bank']))]
+    ['Chuyển khoản', toNumber(pick(row, ['Chuyển khoản', 'Chuyen khoan', 'MoMo', 'Bank', 'CK']))],
+    ['Takeaway', toNumber(pick(row, ['Takeaway', 'Mang đi', 'Mang di', 'Take away']))]
   ].sort((a, b) => Number(b[1]) - Number(a[1]));
   return Number(vals[0][1]) > 0 ? String(vals[0][0]) : 'Khác';
 }
@@ -135,25 +164,83 @@ function normalizeShift(s: unknown): string {
   return s ? String(s) : 'Không rõ';
 }
 
+function normalizeShiftFromRow(row: Record<string, any>): string {
+  const candidates = [
+    pick(row, ['Ca', 'Ca bán', 'Shift']),
+    pick(row, ['Tổng Phần', 'Tong Phan', 'Portions'])
+  ];
+  const shifted = candidates.map(normalizeShift).find((value) => value === 'Sáng' || value === 'Tối');
+  return shifted || normalizeShift(candidates[0]);
+}
+
+function dateFromSalesRow(row: Record<string, any>): Date | null {
+  const explicit = parseLocalDate(pick(row, ['Ngày', 'Ngay', 'Date', 'Thời gian', 'Timestamp']));
+  if (explicit) return explicit;
+
+  const year = toNumber(pick(row, ['Năm', 'Nam', 'Year']));
+  const month = toNumber(pick(row, ['Tháng', 'Thang', 'Month']));
+  const day = toNumber(pick(row, ['Ngày trong tháng', 'Ngay trong thang', 'Day']));
+  if (year >= 1900 && month >= 1 && month <= 12) {
+    return new Date(year, month - 1, day >= 1 && day <= 31 ? day : 1);
+  }
+  return null;
+}
+
+function channelRevenue(row: SaleRow, channel: string): number {
+  const normalized = normalizeChannelName(channel);
+  if (normalized === 'Tiền mặt') return row.cash;
+  if (normalized === 'Chuyển khoản') return row.transfer;
+  if (normalized === 'Grab') return row.grab;
+  if (normalized === 'Shopee') return row.shopee;
+  if (normalized === 'Be') return row.be;
+  if (normalized === 'Xanh ngon') return row.xanh;
+  if (normalized === 'Takeaway') return row.takeaway;
+  return normalizeChannelName(row.channel) === normalized ? row.revenue : 0;
+}
+
+function onlySelectedChannel(row: SaleRow, channel: string): SaleRow | null {
+  const normalized = normalizeChannelName(channel);
+  const amount = channelRevenue(row, normalized);
+  if (!amount) return null;
+  const share = safeDiv(amount, row.revenue || amount) || 1;
+  return {
+    ...row,
+    channel: normalized,
+    revenue: amount,
+    orders: row.orders * share,
+    portions: row.portions * share,
+    boxes: row.boxes * share,
+    plates: row.plates * share,
+    dishes: row.dishes * share,
+    cash: normalized === 'Tiền mặt' ? amount : 0,
+    transfer: normalized === 'Chuyển khoản' ? amount : 0,
+    grab: normalized === 'Grab' ? amount : 0,
+    shopee: normalized === 'Shopee' ? amount : 0,
+    be: normalized === 'Be' ? amount : 0,
+    xanh: normalized === 'Xanh ngon' ? amount : 0,
+    takeaway: normalized === 'Takeaway' ? amount : 0
+  };
+}
+
 export function normalizeSales(workbook: RawWorkbook): SaleRow[] {
   return workbook.dashboard.map((row) => {
-    const date = parseLocalDate(pick(row, ['Ngày', 'Ngay', 'Date', 'Thời gian', 'Timestamp'])) || null;
+    const date = dateFromSalesRow(row);
     const branch = String(pick(row, ['Mã CH', 'Ma CH', 'Branch ID', 'Chi nhánh', 'Cửa hàng']) || 'Không rõ').trim();
     const branchName = String(pick(row, ['Tên CH', 'Tên chi nhánh', 'Chi nhánh', 'Cửa hàng']) || branch).trim();
     const cash = toNumber(pick(row, ['Tiền Mặt', 'Tien Mat', 'Cash']));
     const transfer = toNumber(pick(row, ['Chuyển khoản', 'Chuyen khoan', 'MoMo', 'Bank', 'CK']));
     const grab = toNumber(pick(row, ['Grab_TH', 'Grab', 'GrabFood']));
     const shopee = toNumber(pick(row, ['Shopee_TH', 'Shopee', 'ShopeeFood']));
-    const be = toNumber(pick(row, ['Be_TH', 'Be']));
-    const xanh = toNumber(pick(row, ['Xanh_TH', 'Xanh', 'Xanh SM', 'XanhSM']));
-    const takeaway = toNumber(pick(row, ['Takeaway', 'Mang đi']));
+    const be = toNumber(pick(row, ['Be_TH', 'Be', 'BeFood', 'Be Food']));
+    const xanh = toNumber(pick(row, ['Xanh ngon', 'Xanh Ngon', 'Xanh_Ngon', 'XanhNgon', 'Xanh_TH', 'Xanh', 'Xanh SM']));
+    const takeaway = toNumber(pick(row, ['Takeaway', 'Mang đi', 'Mang di', 'Take away']));
     const explicitRevenue = toNumber(pick(row, ['Doanh_Thu_Thực_Nhận', 'Doanh thu thuần', 'Doanh thu', 'Revenue', 'Net Revenue']));
-    const revenue = explicitRevenue || cash + transfer + grab + shopee + be + takeaway;
-    const boxes = toNumber(pick(row, ['Hộp', 'Hop', 'Số Hộp', 'Số hộp', 'So Hop', 'So hop', 'Boxes', 'Box']));
-    const plates = toNumber(pick(row, ['Dĩa', 'Đĩa', 'Dia', 'Số Dĩa', 'Số dĩa', 'Số Đĩa', 'Số đĩa', 'So Dia', 'So dia', 'Plates', 'Plate']));
-    const explicitPortions = toNumber(pick(row, ['Tổng Phần', 'Tổng phần', 'Tổng số phần', 'Tong Phan', 'Tong phan', 'Total Portions', 'Portions']));
-    const portions = explicitPortions || boxes + plates;
-    const orders = portions || toNumber(pick(row, ['Số đơn', 'Orders']));
+    const revenue = explicitRevenue || cash + transfer + grab + shopee + be + xanh + takeaway;
+    const boxes = toNumber(pick(row, ['Hộp', 'Hop', 'Số Hộp', 'Số hộp', 'So Hop', 'So hop', 'Boxes', 'Box', 'Takeaway boxes']));
+    const plates = toNumber(pick(row, ['Dĩa', 'Đĩa', 'Dia', 'Số Dĩa', 'Số dĩa', 'Số Đĩa', 'Số đĩa', 'So Dia', 'So dia', 'Plates', 'Plate', 'Dine-in portions']));
+    const explicitPortions = toNumber(pick(row, ['Tổng Phần', 'Tổng phần', 'Tổng số phần (Dĩa + Hộp)', 'Tổng số phần', 'Tong Phan', 'Tong phan', 'Total Portions', 'Portions']));
+    const portions = explicitPortions || boxes + plates || toNumber(pick(row, ['Số đơn', 'Orders']));
+    const orders = toNumber(pick(row, ['Số đơn', 'Orders'])) || portions;
     const cogs = toNumber(pick(row, ['COGS', 'Giá vốn', 'Gia von', 'Food Cost Amount']));
     const labor = toNumber(pick(row, ['Labor', 'Lương', 'Chi phí nhân sự', 'Nhan su']));
     return {
@@ -163,12 +250,13 @@ export function normalizeSales(workbook: RawWorkbook): SaleRow[] {
       branch,
       branchName,
       channel: channelFromRow(row),
-      shift: normalizeShift(pick(row, ['Ca', 'Ca bán', 'Shift'])),
+      shift: normalizeShiftFromRow(row),
       revenue,
       orders,
       portions,
       boxes,
       plates,
+      dishes: plates,
       cogs,
       labor,
       cash,
@@ -225,10 +313,11 @@ export function normalizeFeedback(workbook: RawWorkbook): FeedbackRow[] {
 }
 
 function filterSales(rows: SaleRow[], filters: DashboardFilters, start: Date, end: Date): SaleRow[] {
-  return rows.filter((r) => between(r.date, start, end))
+  const filtered = rows.filter((r) => between(r.date, start, end))
     .filter((r) => filters.branch === 'all' || r.branch === filters.branch || r.branchName === filters.branch)
-    .filter((r) => filters.channel === 'all' || r.channel === filters.channel)
     .filter((r) => filters.shift === 'all' || r.shift === filters.shift);
+  if (filters.channel === 'all') return filtered;
+  return filtered.map((row) => onlySelectedChannel(row, filters.channel)).filter((row): row is SaleRow => Boolean(row));
 }
 
 function filterCosts(rows: CostRow[], filters: DashboardFilters, start: Date, end: Date): CostRow[] {
@@ -248,7 +337,7 @@ export function makeContext(workbook: RawWorkbook, filters: DashboardFilters): C
   const allSales = normalizeSales(workbook);
   const allCosts = normalizeCosts(workbook);
   const allFeedback = normalizeFeedback(workbook);
-  const range = dateRangeFromFilters(filters);
+  const range = dateRangeFromFilters(filters, allSales);
   const pRange = previousRange(range.start, range.end, filters.compareMode);
   const rows = filterSales(allSales, filters, range.start, range.end);
   const previousRows = pRange ? filterSales(allSales, filters, pRange.start, pRange.end) : [];
@@ -278,15 +367,17 @@ export function makeContext(workbook: RawWorkbook, filters: DashboardFilters): C
 export function totals(rows: SaleRow[], costs: CostRow[] = []) {
   const revenue = rows.reduce((s, r) => s + r.revenue, 0);
   const orders = rows.reduce((s, r) => s + r.orders, 0);
+  const portions = rows.reduce((s, r) => s + (r.portions || r.orders), 0);
   const cogsFromRows = rows.reduce((s, r) => s + r.cogs, 0);
   const laborFromRows = rows.reduce((s, r) => s + r.labor, 0);
   const costTotal = costs.reduce((s, r) => s + r.amount, 0);
-  const cogs = cogsFromRows;
+  const cogs = cogsFromRows || costTotal * 0.42;
   const labor = laborFromRows || costs.filter((c) => /lương|nhân sự|nhan su/i.test(c.group)).reduce((s, r) => s + r.amount, 0);
   const netProfit = revenue - (cogs || 0) - (costTotal || 0);
   return {
     revenue,
     orders,
+    portions,
     aov: safeDiv(revenue, orders),
     cogs,
     labor,

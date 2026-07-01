@@ -341,3 +341,56 @@
   .action-kpi .kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
   .action-table,.action-risk-stack,.action-impact,.action-priority,.action-branch,.action-owner{grid-column:span 6!important;grid-row:auto!important;}
 }
+
+@media(max-width:900px){
+  html,body{height:auto;min-height:100%;overflow:auto;}
+  .app{height:auto;min-height:100dvh;display:block;overflow:visible;}
+  .sidebar{height:auto;min-height:0;overflow:visible;border-right:0;border-bottom:1px solid var(--sidebar-border);}
+  .brand{height:auto;min-height:50px;}
+  .nav{overflow:visible;padding:8px;}
+  .side-note{margin-top:4px;}
+  .main{height:auto;min-height:0;display:block;overflow:visible;padding:8px 8px 72px;}
+  .topbar{height:auto;min-height:44px;align-items:flex-start;flex-wrap:wrap;padding:8px 10px;margin-bottom:8px;}
+  .page-title h1{font-size:18px;white-space:normal;}
+  .page-title p{white-space:normal;max-width:none;}
+  .top-actions{flex-wrap:wrap;width:100%;justify-content:flex-start;}
+  .filters{height:auto;padding:8px;margin-bottom:8px;}
+  .filter-grid{height:auto;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;}
+  .filter-grid .btn-primary{grid-column:1/-1;width:100%;height:34px;}
+  .f select,.f input{height:34px;font-size:12px;}
+  .status{height:auto;min-height:0;line-height:1.35;white-space:normal;margin:4px 0;}
+  .footer-note{text-align:left;white-space:normal;line-height:1.35;margin-top:8px;}
+  .grid,
+  .grid.tab-overview,.grid.tab-revenue,.grid.tab-pnl,.grid.tab-cost,.grid.tab-channel,.grid.tab-menu,
+  .grid.tab-operation,.grid.tab-people,.grid.tab-inventory,.grid.tab-customer,.grid.tab-expansion{
+    height:auto!important;
+    min-height:0!important;
+    overflow:visible!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    grid-template-rows:none!important;
+    grid-auto-rows:auto!important;
+    gap:8px!important;
+    padding:0!important;
+  }
+  .grid > .widget,
+  .overview-kpi,.revenue-kpi,.std-kpi,.customer-kpi,
+  .overview-trend,.overview-target,.overview-ranking,.overview-channel-mix,.overview-health-table,.overview-alert-table,
+  .revenue-trend,.revenue-branch-compare,.revenue-shift-compare,.revenue-channel-compare,.revenue-mix-pie,.revenue-growth-table,
+  .std-main-wide,.std-main-mid,.std-main-side,.std-bottom-3a,.std-bottom-3b,.std-bottom-3b-cost,.std-bottom-6c,
+  .std-bottom-4a,.std-bottom-5c,.std-bottom-6a,.std-bottom-6b,.std-bottom-8b,.std-bottom-12,
+  .customer-trend,.customer-channel,.customer-branch,.customer-issues,.customer-pattern,.customer-sla,.customer-table,
+  .action-kpi,.action-table,.action-risk-stack,.action-impact,.action-priority,.action-branch,.action-owner{
+    grid-column:1/-1!important;
+    grid-row:auto!important;
+  }
+  .grid > .widget{min-height:260px;}
+  .overview-kpi,.revenue-kpi,.std-kpi,.customer-kpi,.action-kpi{min-height:auto!important;}
+  .overview-kpi .widget-body,.revenue-kpi .widget-body,.std-kpi .widget-body,.customer-kpi .widget-body,.action-kpi .widget-body{height:auto!important;overflow:visible!important;}
+  .kpi-grid.count-1,.kpi-grid.count-2,.kpi-grid.count-3,.kpi-grid.count-4,.kpi-grid.count-5,.kpi-grid.count-6,.kpi-grid.count-7,.kpi-grid.count-8,
+  .action-kpi .kpi-grid{height:auto!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  .overview-kpi .kpi,.revenue-kpi .kpi,.std-kpi .kpi,.customer-kpi .kpi,.action-kpi .kpi{height:74px!important;min-height:74px!important;}
+  .widget-body{min-height:0;}
+  .chart-wrap{min-height:210px;}
+  .table-wrap{max-height:260px;}
+}
