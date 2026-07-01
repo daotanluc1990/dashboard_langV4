@@ -10,7 +10,7 @@ import { AiAssistant } from '@/components/ai/AiAssistant';
 
 const initialFilters: DashboardFilters = {
   tab: 'overview',
-  period: 'latestMonth',
+  period: 'thisMonth',
   compareMode: 'none',
   branch: 'all',
   channel: 'all',

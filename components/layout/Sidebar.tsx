@@ -1,6 +1,6 @@
 'use client';
 import type { TabId } from '@/types/dashboard';
-import { BadgeDollarSign, Bike, ChevronRight, Home, Menu, Package, ReceiptText, Rocket, Settings, Star, TrendingUp, Users, Utensils } from 'lucide-react';
+import { BadgeDollarSign, Bike, Home, Package, ReceiptText, Rocket, Settings, Star, TrendingUp, Users, Utensils } from 'lucide-react';
 
 const iconMap: Record<string, any> = { Home, TrendingUp, BadgeDollarSign, ReceiptText, Bike, Utensils, Settings, Users, Package, Star, Rocket };
 
@@ -20,13 +20,13 @@ export function Sidebar({
   return (
     <aside className="sidebar">
       <div className="brand">
-        <div className="brand-mark" aria-hidden="true">CTL</div>
+        <div className="brand-mark">🍛</div>
         <div className="brand-text">
           <h2>Cơm Tấm Làng<br />CEO BI</h2>
-          <span>Premium Food Analytics</span>
+          <span>DASHBOARD_DATA · NEXT</span>
         </div>
         <button className="sidebar-toggle" type="button" onClick={onToggle} title="Thu/mở sidebar" aria-label="Thu/mở sidebar">
-          {collapsed ? <ChevronRight size={16} /> : <Menu size={16} />}
+          {collapsed ? '›' : '☰'}
         </button>
       </div>
       <nav className="nav">
@@ -40,7 +40,7 @@ export function Sidebar({
           );
         })}
       </nav>
-      <div className="side-note">Thiết kế Premium Food BI: tươi, sáng, scan nhanh KPI mỗi sáng nhưng vẫn giữ đầy đủ 11 góc nhìn CEO.</div>
+      <div className="side-note">11 tab đúng cấu trúc CEO: tổng quan, tăng trưởng, P&amp;L, chi phí, kênh, menu, vận hành, nhân sự, tồn kho, khách hàng, mở rộng.</div>
     </aside>
   );
 }

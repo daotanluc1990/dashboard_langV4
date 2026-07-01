@@ -10,8 +10,8 @@ function asTab(value: string | null): TabId {
   return tabs.includes(value as TabId) ? value as TabId : 'overview';
 }
 function asPeriod(value: string | null): PeriodKey {
-  const periods: PeriodKey[] = ['latestMonth','today','thisWeek','thisMonth','thisYear','custom'];
-  return periods.includes(value as PeriodKey) ? value as PeriodKey : 'latestMonth';
+  const periods: PeriodKey[] = ['today','thisWeek','thisMonth','thisYear','custom'];
+  return periods.includes(value as PeriodKey) ? value as PeriodKey : 'thisMonth';
 }
 function asCompare(value: string | null): CompareMode {
   const modes: CompareMode[] = ['none','previousPeriod','previousMonth','previousYear'];

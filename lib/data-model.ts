@@ -11,6 +11,9 @@ export interface SaleRow {
   shift: string;
   revenue: number;
   orders: number;
+  portions: number;
+  boxes: number;
+  plates: number;
   cogs: number;
   labor: number;
   cash: number;
@@ -20,9 +23,6 @@ export interface SaleRow {
   be: number;
   xanh: number;
   takeaway: number;
-  dishes: number;
-  boxes: number;
-  portions: number;
 }
 
 export interface CostRow {
@@ -66,22 +66,9 @@ export interface Context {
   targets: { revenue: number };
 }
 
-function latestSalesMonthRange(rows: SaleRow[]): { start: Date; end: Date } | null {
-  const latest = rows.reduce<Date | null>((max, row) => {
-    if (!row.date) return max;
-    return !max || row.date.getTime() > max.getTime() ? row.date : max;
-  }, null);
-  if (!latest) return null;
-  return {
-    start: new Date(latest.getFullYear(), latest.getMonth(), 1),
-    end: new Date(latest.getFullYear(), latest.getMonth() + 1, 0)
-  };
-}
-
-function dateRangeFromFilters(filters: DashboardFilters, salesRows: SaleRow[] = []): { start: Date; end: Date } {
+function dateRangeFromFilters(filters: DashboardFilters): { start: Date; end: Date } {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if (filters.period === 'latestMonth') return latestSalesMonthRange(salesRows) || { start: new Date(today.getFullYear(), today.getMonth(), 1), end: today };
   if (filters.period === 'today') return { start: today, end: today };
   if (filters.period === 'thisWeek') {
     const day = today.getDay() || 7;
@@ -127,31 +114,16 @@ function between(d: Date | null, start: Date, end: Date): boolean {
   return t >= start.getTime() && t <= end.getTime();
 }
 
-function normalizeChannelName(value: unknown): string {
-  const raw = String(value || '').trim();
-  const key = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-  if (!key) return '';
-  if (key.includes('tien mat') || key === 'cash') return 'Tiền mặt';
-  if (key.includes('chuyen khoan') || key.includes('bank') || key.includes('momo') || key === 'ck') return 'Chuyển khoản';
-  if (key.includes('grab')) return 'Grab';
-  if (key.includes('shopee')) return 'Shopee';
-  if (key === 'be' || key.includes('befood') || key.includes('be food')) return 'Be';
-  if (key.includes('xanh')) return 'Xanh ngon';
-  if (key.includes('takeaway') || key.includes('mang di') || key.includes('take away')) return 'Takeaway';
-  return raw;
-}
-
 function channelFromRow(row: Record<string, any>): string {
-  const direct = normalizeChannelName(pick(row, ['Kênh', 'Kênh bán', 'Channel']));
+  const direct = String(pick(row, ['Kênh', 'Kênh bán', 'Channel']) || '').trim();
   if (direct) return direct;
   const vals = [
     ['Grab', toNumber(pick(row, ['Grab_TH', 'Grab', 'GrabFood']))],
     ['Shopee', toNumber(pick(row, ['Shopee_TH', 'Shopee', 'ShopeeFood']))],
-    ['Be', toNumber(pick(row, ['Be_TH', 'Be', 'BeFood', 'Be Food']))],
-    ['Xanh ngon', toNumber(pick(row, ['Xanh ngon', 'Xanh Ngon', 'Xanh_Ngon', 'XanhNgon', 'Xanh_TH', 'Xanh', 'Xanh SM']))],
+    ['Be', toNumber(pick(row, ['Be_TH', 'Be']))],
+    ['Xanh', toNumber(pick(row, ['Xanh_TH', 'Xanh', 'Xanh SM', 'XanhSM']))],
     ['Tiền mặt', toNumber(pick(row, ['Tiền Mặt', 'Tien Mat', 'Cash']))],
-    ['Chuyển khoản', toNumber(pick(row, ['Chuyển khoản', 'Chuyen khoan', 'MoMo', 'Bank', 'CK']))],
-    ['Takeaway', toNumber(pick(row, ['Takeaway', 'Mang đi', 'Mang di', 'Take away']))]
+    ['Chuyển khoản', toNumber(pick(row, ['Chuyển khoản', 'Chuyen khoan', 'MoMo', 'Bank']))]
   ].sort((a, b) => Number(b[1]) - Number(a[1]));
   return Number(vals[0][1]) > 0 ? String(vals[0][0]) : 'Khác';
 }
@@ -163,46 +135,25 @@ function normalizeShift(s: unknown): string {
   return s ? String(s) : 'Không rõ';
 }
 
-function normalizeShiftFromRow(row: Record<string, any>): string {
-  const candidates = [
-    pick(row, ['Ca', 'Ca bán', 'Shift']),
-    pick(row, ['Tổng Phần', 'Tong Phan', 'Portions'])
-  ];
-  const shifted = candidates.map(normalizeShift).find((value) => value === 'Sáng' || value === 'Tối');
-  return shifted || normalizeShift(candidates[0]);
-}
-
-function dateFromSalesRow(row: Record<string, any>): Date | null {
-  const explicit = parseLocalDate(pick(row, ['Ngày', 'Ngay', 'Date', 'Thời gian', 'Timestamp']));
-  if (explicit) return explicit;
-
-  const year = toNumber(pick(row, ['Năm', 'Nam', 'Year']));
-  const month = toNumber(pick(row, ['Tháng', 'Thang', 'Month']));
-  const day = toNumber(pick(row, ['Ngày trong tháng', 'Ngay trong thang', 'Day']));
-  if (year >= 1900 && month >= 1 && month <= 12) {
-    return new Date(year, month - 1, day >= 1 && day <= 31 ? day : 1);
-  }
-  return null;
-}
-
 export function normalizeSales(workbook: RawWorkbook): SaleRow[] {
   return workbook.dashboard.map((row) => {
-    const date = dateFromSalesRow(row);
+    const date = parseLocalDate(pick(row, ['Ngày', 'Ngay', 'Date', 'Thời gian', 'Timestamp'])) || null;
     const branch = String(pick(row, ['Mã CH', 'Ma CH', 'Branch ID', 'Chi nhánh', 'Cửa hàng']) || 'Không rõ').trim();
     const branchName = String(pick(row, ['Tên CH', 'Tên chi nhánh', 'Chi nhánh', 'Cửa hàng']) || branch).trim();
     const cash = toNumber(pick(row, ['Tiền Mặt', 'Tien Mat', 'Cash']));
     const transfer = toNumber(pick(row, ['Chuyển khoản', 'Chuyen khoan', 'MoMo', 'Bank', 'CK']));
     const grab = toNumber(pick(row, ['Grab_TH', 'Grab', 'GrabFood']));
     const shopee = toNumber(pick(row, ['Shopee_TH', 'Shopee', 'ShopeeFood']));
-    const be = toNumber(pick(row, ['Be_TH', 'Be', 'BeFood', 'Be Food']));
-    const xanh = toNumber(pick(row, ['Xanh ngon', 'Xanh Ngon', 'Xanh_Ngon', 'XanhNgon', 'Xanh_TH', 'Xanh', 'Xanh SM']));
-    const takeaway = toNumber(pick(row, ['Takeaway', 'Mang đi', 'Mang di', 'Take away']));
+    const be = toNumber(pick(row, ['Be_TH', 'Be']));
+    const xanh = toNumber(pick(row, ['Xanh_TH', 'Xanh', 'Xanh SM', 'XanhSM']));
+    const takeaway = toNumber(pick(row, ['Takeaway', 'Mang đi']));
     const explicitRevenue = toNumber(pick(row, ['Doanh_Thu_Thực_Nhận', 'Doanh thu thuần', 'Doanh thu', 'Revenue', 'Net Revenue']));
-    const revenue = explicitRevenue || cash + transfer + grab + shopee + be + xanh + takeaway;
-    const dishes = toNumber(pick(row, ['Dĩa', 'Dia', 'Số Dĩa', 'So Dia', 'Dine-in portions']));
-    const boxes = toNumber(pick(row, ['Hộp', 'Hop', 'Số Hộp', 'So Hop', 'Box', 'Takeaway boxes']));
-    const portions = toNumber(pick(row, ['Tổng Phần', 'Tổng số phần (Dĩa + Hộp)', 'Tổng số phần', 'Tong Phan', 'Portions'])) || dishes + boxes || toNumber(pick(row, ['Số đơn', 'Orders']));
-    const orders = toNumber(pick(row, ['Số đơn', 'Orders'])) || portions;
+    const revenue = explicitRevenue || cash + transfer + grab + shopee + be + takeaway;
+    const boxes = toNumber(pick(row, ['Hộp', 'Hop', 'Số Hộp', 'Số hộp', 'So Hop', 'So hop', 'Boxes', 'Box']));
+    const plates = toNumber(pick(row, ['Dĩa', 'Đĩa', 'Dia', 'Số Dĩa', 'Số dĩa', 'Số Đĩa', 'Số đĩa', 'So Dia', 'So dia', 'Plates', 'Plate']));
+    const explicitPortions = toNumber(pick(row, ['Tổng Phần', 'Tổng phần', 'Tổng số phần', 'Tong Phan', 'Tong phan', 'Total Portions', 'Portions']));
+    const portions = explicitPortions || boxes + plates;
+    const orders = portions || toNumber(pick(row, ['Số đơn', 'Orders']));
     const cogs = toNumber(pick(row, ['COGS', 'Giá vốn', 'Gia von', 'Food Cost Amount']));
     const labor = toNumber(pick(row, ['Labor', 'Lương', 'Chi phí nhân sự', 'Nhan su']));
     return {
@@ -212,9 +163,12 @@ export function normalizeSales(workbook: RawWorkbook): SaleRow[] {
       branch,
       branchName,
       channel: channelFromRow(row),
-      shift: normalizeShiftFromRow(row),
+      shift: normalizeShift(pick(row, ['Ca', 'Ca bán', 'Shift'])),
       revenue,
       orders,
+      portions,
+      boxes,
+      plates,
       cogs,
       labor,
       cash,
@@ -223,10 +177,7 @@ export function normalizeSales(workbook: RawWorkbook): SaleRow[] {
       shopee,
       be,
       xanh,
-      takeaway,
-      dishes,
-      boxes,
-      portions
+      takeaway
     };
   }).filter((r) => r.date && (r.revenue || r.orders));
 }
@@ -297,7 +248,7 @@ export function makeContext(workbook: RawWorkbook, filters: DashboardFilters): C
   const allSales = normalizeSales(workbook);
   const allCosts = normalizeCosts(workbook);
   const allFeedback = normalizeFeedback(workbook);
-  const range = dateRangeFromFilters(filters, allSales);
+  const range = dateRangeFromFilters(filters);
   const pRange = previousRange(range.start, range.end, filters.compareMode);
   const rows = filterSales(allSales, filters, range.start, range.end);
   const previousRows = pRange ? filterSales(allSales, filters, pRange.start, pRange.end) : [];
@@ -327,17 +278,15 @@ export function makeContext(workbook: RawWorkbook, filters: DashboardFilters): C
 export function totals(rows: SaleRow[], costs: CostRow[] = []) {
   const revenue = rows.reduce((s, r) => s + r.revenue, 0);
   const orders = rows.reduce((s, r) => s + r.orders, 0);
-  const portions = rows.reduce((s, r) => s + (r.portions || r.orders), 0);
   const cogsFromRows = rows.reduce((s, r) => s + r.cogs, 0);
   const laborFromRows = rows.reduce((s, r) => s + r.labor, 0);
   const costTotal = costs.reduce((s, r) => s + r.amount, 0);
-  const cogs = cogsFromRows || costTotal * 0.42;
+  const cogs = cogsFromRows;
   const labor = laborFromRows || costs.filter((c) => /lương|nhân sự|nhan su/i.test(c.group)).reduce((s, r) => s + r.amount, 0);
   const netProfit = revenue - (cogs || 0) - (costTotal || 0);
   return {
     revenue,
     orders,
-    portions,
     aov: safeDiv(revenue, orders),
     cogs,
     labor,
@@ -358,8 +307,8 @@ export function groupSalesByTime(rows: SaleRow[], mode: Context['groupMode']) {
     if (!r.date) continue;
     const key = mode === 'year' ? String(r.date.getFullYear()) : mode === 'month' ? r.monthKey : r.dateKey;
     const label = mode === 'year' ? key : mode === 'month' ? monthLabel(key) : formatDateLabel(r.date);
-    const item = map.get(key) || { key, label, revenue: 0, orders: 0, portions: 0, dishes: 0, boxes: 0, cogs: 0, labor: 0 };
-    item.revenue += r.revenue; item.orders += r.orders; item.portions += r.portions || r.orders; item.dishes += r.dishes; item.boxes += r.boxes; item.cogs += r.cogs; item.labor += r.labor;
+    const item = map.get(key) || { key, label, revenue: 0, orders: 0, cogs: 0, labor: 0 };
+    item.revenue += r.revenue; item.orders += r.orders; item.cogs += r.cogs; item.labor += r.labor;
     map.set(key, item);
   }
   return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key)).map((x) => ({ ...x, aov: safeDiv(x.revenue, x.orders), profit: x.revenue - x.cogs - x.labor, margin: safeDiv(x.revenue - x.cogs - x.labor, x.revenue) * 100 }));
@@ -371,8 +320,8 @@ export function groupByBranch(rows: SaleRow[], prevRows: SaleRow[] = []) {
   const map = new Map<string, any>();
   for (const r of rows) {
     const key = r.branchName || r.branch;
-    const item = map.get(key) || { branch: key, revenue: 0, orders: 0, portions: 0, dishes: 0, boxes: 0, cogs: 0, labor: 0 };
-    item.revenue += r.revenue; item.orders += r.orders; item.portions += r.portions || r.orders; item.dishes += r.dishes; item.boxes += r.boxes; item.cogs += r.cogs; item.labor += r.labor;
+    const item = map.get(key) || { branch: key, revenue: 0, orders: 0, cogs: 0, labor: 0 };
+    item.revenue += r.revenue; item.orders += r.orders; item.cogs += r.cogs; item.labor += r.labor;
     map.set(key, item);
   }
   return Array.from(map.values()).map((x) => {
@@ -383,45 +332,29 @@ export function groupByBranch(rows: SaleRow[], prevRows: SaleRow[] = []) {
 }
 
 export function groupByChannel(rows: SaleRow[]) {
-  const groups = ['Tiền mặt', 'Chuyển khoản', 'Grab', 'Shopee', 'Be', 'Xanh ngon', 'Takeaway'];
+  const groups = ['Tiền mặt', 'Chuyển khoản', 'Grab', 'Shopee', 'Be', 'Xanh', 'Takeaway'];
   const totalsByExplicit = new Map<string, any>();
-
-  function add(name: string, row: SaleRow, revenue: number) {
-    const channel = normalizeChannelName(name) || 'Khác';
-    const n = Number(revenue || 0);
-    if (!n) return;
-    const share = safeDiv(n, row.revenue || n);
-    const item = totalsByExplicit.get(channel) || { name: channel, revenue: 0, orders: 0, portions: 0, dishes: 0, boxes: 0 };
-    item.revenue += n;
-    item.orders += row.orders * share;
-    item.portions += (row.portions || row.orders) * share;
-    item.dishes += row.dishes * share;
-    item.boxes += row.boxes * share;
-    totalsByExplicit.set(channel, item);
-  }
-
   for (const r of rows) {
-    const entries: Array<[string, number]> = [
-      ['Tiền mặt', r.cash],
-      ['Chuyển khoản', r.transfer],
-      ['Grab', r.grab],
-      ['Shopee', r.shopee],
-      ['Be', r.be],
-      ['Xanh ngon', r.xanh],
-      ['Takeaway', r.takeaway]
+    const entries = [
+      ['Tiền mặt', r.cash], ['Chuyển khoản', r.transfer], ['Grab', r.grab], ['Shopee', r.shopee], ['Be', r.be], ['Xanh', r.xanh], ['Takeaway', r.takeaway]
     ];
     const hasBreakdown = entries.some(([, v]) => Number(v) > 0);
     if (hasBreakdown) {
-      for (const [name, value] of entries) add(name, r, value);
+      for (const [name, value] of entries) {
+        const n = Number(value || 0); if (!n) continue;
+        const item = totalsByExplicit.get(String(name)) || { name, revenue: 0, orders: 0 };
+        item.revenue += n;
+        item.orders += r.orders * safeDiv(n, r.revenue || n);
+        totalsByExplicit.set(String(name), item);
+      }
     } else {
-      add(r.channel || 'Khác', r, r.revenue);
+      const name = r.channel || 'Khác';
+      const item = totalsByExplicit.get(name) || { name, revenue: 0, orders: 0 };
+      item.revenue += r.revenue; item.orders += r.orders;
+      totalsByExplicit.set(name, item);
     }
   }
-
-  return groups.concat('Khác')
-    .map((name) => totalsByExplicit.get(name))
-    .filter(Boolean)
-    .map((x) => ({ ...x, aov: safeDiv(x.revenue, x.portions || x.orders), share: 0 }));
+  return groups.concat('Khác').map((name) => totalsByExplicit.get(name)).filter(Boolean).map((x) => ({ ...x, aov: safeDiv(x.revenue, x.orders), share: 0 }));
 }
 
 export function groupCostsByGroup(rows: CostRow[], prev: CostRow[] = []) {
