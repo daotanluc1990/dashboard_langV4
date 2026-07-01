@@ -39,7 +39,8 @@ export function DashboardGrid({ payload, loading }: { payload: DashboardPayload 
   const widgetLayouts = payload.kpis.length ? layouts.slice(1) : layouts;
 
   return (
-    <section className={`grid ${tabClass[payload.tab]}`}>
+    <section className={`grid ${tabClass[payload.tab]} ${loading ? 'is-loading' : ''}`}>
+      {loading ? <div className="grid-loading">Đang cập nhật dữ liệu...</div> : null}
       {payload.kpis.length ? (
         <article className={`widget ${kpiLayout}`}>
           <div className="widget-head"><h3>KPI điều hành</h3></div>

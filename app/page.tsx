@@ -38,6 +38,9 @@ export default function Page() {
       return;
     }
     setLoading(true); setError('');
+    if (payload?.tab && payload.tab !== targetFilters.tab) {
+      setPayload(null);
+    }
     try {
       const params = new URLSearchParams(Object.entries(targetFilters).filter(([, v]) => v != null) as any);
       if (force) params.set('force', '1');
@@ -66,7 +69,7 @@ export default function Page() {
       <Sidebar tabs={tabs} activeTab={filters.tab} collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} onSelect={selectTab} />
       <main className="main">
         <Header title={tabTitles[filters.tab].title} subtitle={tabTitles[filters.tab].subtitle} loading={loading} source={payload?.meta.source} onRefresh={() => load(filters, true)} />
-        <FilterBar filters={filters} onChange={setFilters} />
+        <FilterBar filters={filters} loading={loading} onChange={setFilters} />
         <section className={`status ${error ? 'error' : payload ? 'ok' : ''}`}>
           {loading ? 'Đang tải dữ liệu Google Sheet...' : error ? error : ''}
         </section>

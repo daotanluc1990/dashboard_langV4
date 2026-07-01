@@ -3,8 +3,8 @@ import type { DashboardWidget } from '@/types/dashboard';
 import { Bar, BarChart, CartesianGrid, Cell, ComposedChart, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { DataTable } from './DataTable';
 
-const COLORS = ['#1D4E89', '#2A9D8F', '#F4A261', '#E76F51', '#3A86FF', '#6C757D', '#8AB17D'];
-const roleColor: Record<string, string> = { primary: '#1D4E89', success: '#2A9D8F', warning: '#F4A261', danger: '#E76F51', muted: '#8D99AE', blue: '#3A86FF' };
+const COLORS = ['#0F7C80', '#2563EB', '#F59E0B', '#F9735B', '#16A36A', '#6B7F82', '#8BC7B8'];
+const roleColor: Record<string, string> = { primary: '#0F7C80', success: '#16A36A', warning: '#F59E0B', danger: '#F9735B', muted: '#8AA0A3', blue: '#2563EB' };
 
 function fmt(v: any) {
   if (typeof v !== 'number') return v;
@@ -58,10 +58,10 @@ function renderWidget(widget: DashboardWidget) {
       <div className="chart-wrap">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ left: 4, right: 8, top: 2, bottom: 0 }}>
-            <CartesianGrid stroke="#E9EFF5" />
-            <XAxis dataKey={xKey} tick={{fontSize:10, fill:'#637083'}} tickMargin={4} />
-            <YAxis tick={{fontSize:10, fill:'#637083'}} tickFormatter={fmt} width={34}/>
-            <Tooltip formatter={(v:any)=>fmt(v)} contentStyle={{ fontSize: 11, borderRadius: 10, border: '0', background: '#172033', color: '#fff' }} />
+            <CartesianGrid stroke="#EDF4F3" />
+            <XAxis dataKey={xKey} tick={{fontSize:10, fill:'#5C7174'}} tickMargin={4} />
+            <YAxis tick={{fontSize:10, fill:'#5C7174'}} tickFormatter={fmt} width={34}/>
+            <Tooltip formatter={(v:any)=>fmt(v)} contentStyle={{ fontSize: 11, borderRadius: 10, border: '0', background: '#102A2C', color: '#fff' }} />
             <Legend wrapperStyle={{ fontSize: 10, paddingTop: 2 }} iconSize={7}/>
             {(widget.datasets||[]).map((ds,i)=><Line key={ds.dataKey} type="monotone" dataKey={ds.dataKey} name={ds.name} stroke={roleColor[ds.role||'primary']||COLORS[i]} strokeWidth={2.2} dot={false}/>) }
           </LineChart>
@@ -75,12 +75,12 @@ function renderWidget(widget: DashboardWidget) {
       <div className="chart-wrap">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ left: 4, right: 8, top: 2, bottom: 0 }}>
-            <CartesianGrid stroke="#E9EFF5" />
-            <XAxis type="number" tick={{fontSize:10, fill:'#637083'}} tickFormatter={fmt}/>
-            <YAxis type="category" dataKey={yKey} tick={{fontSize:10, fill:'#637083'}} width={88}/>
-            <Tooltip formatter={(v:any)=>fmt(v)} contentStyle={{ fontSize: 11, borderRadius: 10, border: '0', background: '#172033', color: '#fff' }} />
+            <CartesianGrid stroke="#EDF4F3" />
+            <XAxis type="number" tick={{fontSize:10, fill:'#5C7174'}} tickFormatter={fmt}/>
+            <YAxis type="category" dataKey={yKey} tick={{fontSize:10, fill:'#5C7174'}} width={88}/>
+            <Tooltip formatter={(v:any)=>fmt(v)} contentStyle={{ fontSize: 11, borderRadius: 10, border: '0', background: '#102A2C', color: '#fff' }} />
             <Legend wrapperStyle={{ fontSize: 10, paddingTop: 2 }} iconSize={7}/>
-            {(widget.datasets||[]).map((ds,i)=><Bar key={ds.dataKey} dataKey={ds.dataKey} name={ds.name} fill={roleColor[ds.role||'primary']||COLORS[i]} radius={[0,6,6,0]}/>) }
+            {(widget.datasets||[]).map((ds,i)=><Bar key={ds.dataKey} dataKey={ds.dataKey} name={ds.name} fill={roleColor[ds.role||'primary']||COLORS[i]} radius={[0,6,6,0]} maxBarSize={data.length <= 1 ? 34 : 48}/>) }
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -92,12 +92,12 @@ function renderWidget(widget: DashboardWidget) {
       <div className="chart-wrap">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ left: 4, right: 8, top: 2, bottom: 0 }} barCategoryGap="26%" barGap={0}>
-            <CartesianGrid stroke="#E8EEF5" vertical={false} />
-            <XAxis dataKey={xKey} tick={{fontSize:10, fill:'#5D6B7C'}} tickMargin={4} />
-            <YAxis tick={{fontSize:10, fill:'#5D6B7C'}} tickFormatter={fmt} width={38}/>
-            <Tooltip formatter={(v:any)=>fmt(v)} contentStyle={{ fontSize: 11, borderRadius: 12, border: '0', background: '#172033', color: '#fff' }} />
+            <CartesianGrid stroke="#EDF4F3" vertical={false} />
+            <XAxis dataKey={xKey} tick={{fontSize:10, fill:'#5C7174'}} tickMargin={4} />
+            <YAxis tick={{fontSize:10, fill:'#5C7174'}} tickFormatter={fmt} width={38}/>
+            <Tooltip formatter={(v:any)=>fmt(v)} contentStyle={{ fontSize: 11, borderRadius: 12, border: '0', background: '#102A2C', color: '#fff' }} />
             <Legend wrapperStyle={{ fontSize: 10, paddingTop: 2 }} iconSize={7}/>
-            {(widget.datasets||[]).map((ds,i)=><Bar key={ds.dataKey} stackId="total" dataKey={ds.dataKey} name={ds.name} fill={roleColor[ds.role||'primary']||COLORS[i%COLORS.length]} maxBarSize={34} radius={[3,3,3,3]}/>) }
+            {(widget.datasets||[]).map((ds,i)=><Bar key={ds.dataKey} stackId="total" dataKey={ds.dataKey} name={ds.name} fill={roleColor[ds.role||'primary']||COLORS[i%COLORS.length]} maxBarSize={data.length <= 1 ? 30 : 34} radius={[3,3,3,3]}/>) }
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -108,15 +108,15 @@ function renderWidget(widget: DashboardWidget) {
     <div className="chart-wrap">
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={data} margin={{ left: 4, right: 8, top: 2, bottom: 0 }}>
-          <CartesianGrid stroke="#E9EFF5" />
-          <XAxis dataKey={xKey} tick={{fontSize:10, fill:'#637083'}} tickMargin={4}/>
-          <YAxis yAxisId="left" tick={{fontSize:10, fill:'#637083'}} tickFormatter={fmt} width={34}/>
-          <YAxis yAxisId="right" orientation="right" tick={{fontSize:10, fill:'#637083'}} tickFormatter={fmt} width={34}/>
-          <Tooltip formatter={(v:any)=>fmt(v)} contentStyle={{ fontSize: 11, borderRadius: 10, border: '0', background: '#172033', color: '#fff' }} />
+          <CartesianGrid stroke="#EDF4F3" />
+          <XAxis dataKey={xKey} tick={{fontSize:10, fill:'#5C7174'}} tickMargin={4}/>
+          <YAxis yAxisId="left" tick={{fontSize:10, fill:'#5C7174'}} tickFormatter={fmt} width={34}/>
+          <YAxis yAxisId="right" orientation="right" tick={{fontSize:10, fill:'#5C7174'}} tickFormatter={fmt} width={34}/>
+          <Tooltip formatter={(v:any)=>fmt(v)} contentStyle={{ fontSize: 11, borderRadius: 10, border: '0', background: '#102A2C', color: '#fff' }} />
           <Legend wrapperStyle={{ fontSize: 10, paddingTop: 2 }} iconSize={7}/>
           {(widget.datasets||[]).map((ds,i)=> ds.type === 'line'
             ? <Line key={ds.dataKey} yAxisId={ds.axis === 'right' ? 'right' : 'left'} type="monotone" dataKey={ds.dataKey} name={ds.name} stroke={roleColor[ds.role||'primary']||COLORS[i]} strokeWidth={2.2} dot={false}/>
-            : <Bar key={ds.dataKey} yAxisId={ds.axis === 'right' ? 'right' : 'left'} dataKey={ds.dataKey} name={ds.name} fill={roleColor[ds.role||'primary']||COLORS[i]} radius={[6,6,0,0]}/>
+            : <Bar key={ds.dataKey} yAxisId={ds.axis === 'right' ? 'right' : 'left'} dataKey={ds.dataKey} name={ds.name} fill={roleColor[ds.role||'primary']||COLORS[i]} radius={[6,6,0,0]} maxBarSize={data.length <= 1 ? 42 : 54}/>
           )}
         </ComposedChart>
       </ResponsiveContainer>

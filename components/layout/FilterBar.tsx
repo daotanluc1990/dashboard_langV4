@@ -2,9 +2,18 @@
 import { useEffect, useState } from 'react';
 import type { DashboardFilters } from '@/types/dashboard';
 
-export function FilterBar({ filters, onChange }: { filters: DashboardFilters; onChange: (f: DashboardFilters) => void }) {
+export function FilterBar({
+  filters,
+  loading,
+  onChange
+}: {
+  filters: DashboardFilters;
+  loading?: boolean;
+  onChange: (f: DashboardFilters) => void;
+}) {
   const [draft, setDraft] = useState(filters);
   const set = (patch: Partial<DashboardFilters>) => setDraft((current) => ({ ...current, ...patch }));
+  const dirty = JSON.stringify(draft) !== JSON.stringify(filters);
 
   useEffect(() => {
     setDraft(filters);
@@ -20,7 +29,9 @@ export function FilterBar({ filters, onChange }: { filters: DashboardFilters; on
         <div className="f"><label>Chi nhánh</label><input value={draft.branch === 'all' ? '' : draft.branch} placeholder="Tất cả chi nhánh" onChange={e=>set({branch:e.target.value || 'all'})}/></div>
         <div className="f"><label>Kênh</label><select value={draft.channel} onChange={e=>set({channel:e.target.value})}><option value="all">Tất cả kênh</option><option>Tiền mặt</option><option>Chuyển khoản</option><option>Grab</option><option>Shopee</option><option>Be</option><option>Xanh ngon</option><option>Takeaway</option></select></div>
         <div className="f"><label>Ca</label><select value={draft.shift} onChange={e=>set({shift:e.target.value})}><option value="all">Tất cả ca</option><option>Sáng</option><option>Tối</option></select></div>
-        <button className="btn-primary" type="button" onClick={()=>onChange(draft)}>Áp dụng</button>
+        <button className="btn-primary filter-apply" type="button" onClick={()=>onChange(draft)} disabled={loading || !dirty}>
+          {loading ? 'Đang tải' : dirty ? 'Áp dụng' : 'Đã áp dụng'}
+        </button>
       </div>
     </section>
   );
