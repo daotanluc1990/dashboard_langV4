@@ -68,10 +68,7 @@ export interface Context {
 }
 
 function latestSalesMonthRange(rows: SaleRow[]): { start: Date; end: Date } | null {
-  const latest = rows.reduce<Date | null>((max, row) => {
-    if (!row.date) return max;
-    return !max || row.date.getTime() > max.getTime() ? row.date : max;
-  }, null);
+  const latest = latestSalesDate(rows);
   if (!latest) return null;
   return {
     start: new Date(latest.getFullYear(), latest.getMonth(), 1),
@@ -79,9 +76,27 @@ function latestSalesMonthRange(rows: SaleRow[]): { start: Date; end: Date } | nu
   };
 }
 
+function latestSalesRealtimeRange(rows: SaleRow[]): { start: Date; end: Date } | null {
+  const latest = latestSalesDate(rows);
+  if (!latest) return null;
+  return {
+    start: new Date(latest.getFullYear(), latest.getMonth(), 1),
+    end: new Date(latest.getFullYear(), latest.getMonth(), latest.getDate())
+  };
+}
+
+function latestSalesDate(rows: SaleRow[]): Date | null {
+  return rows.reduce<Date | null>((max, row) => {
+    if (!row.date) return max;
+    return !max || row.date.getTime() > max.getTime() ? row.date : max;
+  }, null);
+}
+
 function dateRangeFromFilters(filters: DashboardFilters, salesRows: SaleRow[] = []): { start: Date; end: Date } {
   const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const latest = latestSalesDate(salesRows);
+  const today = latest ? new Date(latest.getFullYear(), latest.getMonth(), latest.getDate()) : new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (filters.period === 'realTime') return latestSalesRealtimeRange(salesRows) || { start: new Date(today.getFullYear(), today.getMonth(), 1), end: today };
   if (filters.period === 'latestMonth') return latestSalesMonthRange(salesRows) || { start: new Date(today.getFullYear(), today.getMonth(), 1), end: today };
   if (filters.period === 'today') return { start: today, end: today };
   if (filters.period === 'thisWeek') {
@@ -89,6 +104,32 @@ function dateRangeFromFilters(filters: DashboardFilters, salesRows: SaleRow[] = 
     const start = new Date(today);
     start.setDate(today.getDate() - day + 1);
     return { start, end: today };
+  }
+  if (filters.period === 'last7Days') {
+    const start = new Date(today);
+    start.setDate(today.getDate() - 6);
+    return { start, end: today };
+  }
+  if (filters.period === 'last30Days') {
+    const start = new Date(today);
+    start.setDate(today.getDate() - 29);
+    return { start, end: today };
+  }
+  if (filters.period === 'last90Days') {
+    const start = new Date(today);
+    start.setDate(today.getDate() - 89);
+    return { start, end: today };
+  }
+  if (filters.period === 'previousWeek') {
+    const day = today.getDay() || 7;
+    const end = new Date(today);
+    end.setDate(today.getDate() - day);
+    const start = new Date(end);
+    start.setDate(end.getDate() - 6);
+    return { start, end };
+  }
+  if (filters.period === 'previousMonth') {
+    return { start: new Date(today.getFullYear(), today.getMonth() - 1, 1), end: new Date(today.getFullYear(), today.getMonth(), 0) };
   }
   if (filters.period === 'thisYear') return { start: new Date(today.getFullYear(), 0, 1), end: today };
   if (filters.period === 'custom' && filters.startDate && filters.endDate) {

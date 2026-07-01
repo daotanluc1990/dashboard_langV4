@@ -11,7 +11,19 @@ export type TabId =
   | 'customer'
   | 'expansion';
 
-export type PeriodKey = 'latestMonth' | 'today' | 'thisWeek' | 'thisMonth' | 'thisYear' | 'custom';
+export type PeriodKey =
+  | 'realTime'
+  | 'latestMonth'
+  | 'today'
+  | 'thisWeek'
+  | 'last7Days'
+  | 'last30Days'
+  | 'previousWeek'
+  | 'previousMonth'
+  | 'last90Days'
+  | 'thisMonth'
+  | 'thisYear'
+  | 'custom';
 export type CompareMode = 'none' | 'previousPeriod' | 'previousMonth' | 'previousYear';
 
 export interface DashboardFilters {

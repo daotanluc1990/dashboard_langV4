@@ -10,7 +10,7 @@ import { AiAssistant } from '@/components/ai/AiAssistant';
 
 const initialFilters: DashboardFilters = {
   tab: 'overview',
-  period: 'latestMonth',
+  period: 'realTime',
   compareMode: 'none',
   branch: 'all',
   channel: 'all',
@@ -25,16 +25,27 @@ export default function Page() {
   const [collapsed, setCollapsed] = useState(false);
   const [cache, setCache] = useState<Map<string, DashboardPayload>>(new Map());
   const requestSeq = useRef(0);
+  const cacheRef = useRef(cache);
+  const prefetchingRef = useRef(new Set<string>());
 
   const cacheKey = useMemo(() => JSON.stringify(filters), [filters]);
+
+  function writeCache(key: string, value: DashboardPayload) {
+    setCache((prev) => {
+      const next = new Map(prev).set(key, value);
+      cacheRef.current = next;
+      return next;
+    });
+  }
 
   async function load(targetFilters = filters, force = false) {
     const currentKey = JSON.stringify(targetFilters);
     const seq = ++requestSeq.current;
-    const cached = cache.get(currentKey);
+    const cached = cacheRef.current.get(currentKey);
     if (!force && cached) {
       setPayload(cached);
       setLoading(false);
+      prefetchTabs(targetFilters);
       return;
     }
     setLoading(true); setError('');
@@ -49,13 +60,39 @@ export default function Page() {
       if (!res.ok || !json.ok) throw new Error(json.error || 'Không tải được dashboard');
       if (seq !== requestSeq.current) return;
       setPayload(json);
-      setCache((prev) => new Map(prev).set(currentKey, json));
+      writeCache(currentKey, json);
+      prefetchTabs(targetFilters);
     } catch (e) {
       if (seq !== requestSeq.current) return;
       setError(e instanceof Error ? e.message : 'Lỗi không xác định');
     } finally {
       if (seq === requestSeq.current) setLoading(false);
     }
+  }
+
+  function prefetchTabs(baseFilters: DashboardFilters) {
+    const jobs = tabs
+      .map((tab) => ({ ...baseFilters, tab: tab.id }))
+      .filter((target) => target.tab !== baseFilters.tab)
+      .filter((target) => {
+        const key = JSON.stringify(target);
+        return !cacheRef.current.has(key) && !prefetchingRef.current.has(key);
+      });
+
+    jobs.forEach((target) => {
+      const key = JSON.stringify(target);
+      prefetchingRef.current.add(key);
+      const params = new URLSearchParams(Object.entries(target).filter(([, v]) => v != null) as any);
+      fetch(`/api/dashboard?${params.toString()}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((json) => {
+          if (json?.ok) writeCache(key, json);
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          prefetchingRef.current.delete(key);
+        });
+    });
   }
 
   useEffect(() => { load(filters, false); }, [cacheKey]);

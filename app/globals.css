@@ -391,7 +391,7 @@ textarea:disabled {
 
 .filter-grid {
   display: grid;
-  grid-template-columns: 1.08fr 0.86fr 0.86fr 0.95fr minmax(150px, 1fr) 0.9fr 0.75fr auto;
+  grid-template-columns: minmax(240px, 1.28fr) 0.86fr 0.86fr 0.95fr minmax(150px, 1fr) 0.9fr 0.75fr auto;
   gap: 8px;
   align-items: end;
 }
@@ -1601,3 +1601,19 @@ tr.bad td {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* Time range picker: unified preset/date filter inspired by operations dashboards. */
+.time-filter{position:relative;}
+.time-trigger{display:grid;width:100%;min-height:32px;align-content:center;gap:2px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface);color:var(--ink);padding:5px 32px 5px 10px;text-align:left;}
+.time-trigger::after{position:absolute;right:11px;top:34px;content:"⌄";color:var(--brand);font-size:15px;font-weight:900;pointer-events:none;}
+.time-trigger span{overflow:hidden;font-size:12px;font-weight:900;text-overflow:ellipsis;white-space:nowrap;}
+.time-trigger small{overflow:hidden;color:var(--muted);font-size:10px;font-weight:700;line-height:1.15;text-overflow:ellipsis;white-space:nowrap;}
+.time-trigger:focus{border-color:rgba(15,124,128,.55);box-shadow:0 0 0 3px rgba(15,124,128,.12);}
+.time-menu{position:absolute;left:0;top:calc(100% + 6px);z-index:50;width:min(360px,calc(100vw - 24px));max-height:min(430px,70vh);overflow:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface);box-shadow:0 24px 70px rgba(16,42,44,.18);padding:8px;}
+.time-menu button{display:grid;width:100%;gap:3px;border:0;border-radius:10px;background:transparent;color:var(--ink);padding:9px 10px;text-align:left;}
+.time-menu button:hover,.time-menu button.active{background:var(--brand-soft);}
+.time-menu button span{font-size:13px;font-weight:900;}
+.time-menu button small{color:var(--muted);font-size:11px;font-weight:700;}
+@media(max-width:1280px) and (min-width:901px){.time-filter{grid-column:span 2;}.filter-grid .btn-primary{grid-column:span 4;}}
+@media(max-width:900px){.time-filter{grid-column:1/-1;}.time-trigger{min-height:42px;}.time-trigger::after{top:38px;}}
+@media(max-width:520px){.time-menu{width:100%;}}

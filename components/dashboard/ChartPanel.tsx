@@ -44,7 +44,7 @@ function renderWidget(widget: DashboardWidget) {
           <PieChart>
             <Tooltip formatter={(v:any)=>fmt(v)} contentStyle={{ fontSize: 11, borderRadius: 10, border: '0', background: '#172033', color: '#fff' }} />
             <Legend wrapperStyle={{ fontSize: 10, paddingTop: 2 }} iconSize={7}/>
-            <Pie data={data} dataKey="value" nameKey="name" outerRadius="72%" innerRadius="0%" stroke="#fff" strokeWidth={2}>
+            <Pie data={data} dataKey="value" nameKey="name" outerRadius="72%" innerRadius="0%" stroke="#fff" strokeWidth={2} isAnimationActive={false}>
               {data.map((_,i)=><Cell key={i} fill={COLORS[i%COLORS.length]}/>) }
             </Pie>
           </PieChart>
@@ -63,7 +63,7 @@ function renderWidget(widget: DashboardWidget) {
             <YAxis tick={{fontSize:10, fill:'#5C7174'}} tickFormatter={fmt} width={34}/>
             <Tooltip formatter={(v:any)=>fmt(v)} contentStyle={{ fontSize: 11, borderRadius: 10, border: '0', background: '#102A2C', color: '#fff' }} />
             <Legend wrapperStyle={{ fontSize: 10, paddingTop: 2 }} iconSize={7}/>
-            {(widget.datasets||[]).map((ds,i)=><Line key={ds.dataKey} type="monotone" dataKey={ds.dataKey} name={ds.name} stroke={roleColor[ds.role||'primary']||COLORS[i]} strokeWidth={2.2} dot={false}/>) }
+            {(widget.datasets||[]).map((ds,i)=><Line key={ds.dataKey} type="monotone" dataKey={ds.dataKey} name={ds.name} stroke={roleColor[ds.role||'primary']||COLORS[i]} strokeWidth={2.2} dot={false} isAnimationActive={false}/>) }
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -80,7 +80,7 @@ function renderWidget(widget: DashboardWidget) {
             <YAxis type="category" dataKey={yKey} tick={{fontSize:10, fill:'#5C7174'}} width={88}/>
             <Tooltip formatter={(v:any)=>fmt(v)} contentStyle={{ fontSize: 11, borderRadius: 10, border: '0', background: '#102A2C', color: '#fff' }} />
             <Legend wrapperStyle={{ fontSize: 10, paddingTop: 2 }} iconSize={7}/>
-            {(widget.datasets||[]).map((ds,i)=><Bar key={ds.dataKey} dataKey={ds.dataKey} name={ds.name} fill={roleColor[ds.role||'primary']||COLORS[i]} radius={[0,6,6,0]} maxBarSize={data.length <= 1 ? 34 : 48}/>) }
+            {(widget.datasets||[]).map((ds,i)=><Bar key={ds.dataKey} dataKey={ds.dataKey} name={ds.name} fill={roleColor[ds.role||'primary']||COLORS[i]} radius={[0,6,6,0]} maxBarSize={data.length <= 1 ? 34 : 48} isAnimationActive={false}/>) }
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -97,7 +97,7 @@ function renderWidget(widget: DashboardWidget) {
             <YAxis tick={{fontSize:10, fill:'#5C7174'}} tickFormatter={fmt} width={38}/>
             <Tooltip formatter={(v:any)=>fmt(v)} contentStyle={{ fontSize: 11, borderRadius: 12, border: '0', background: '#102A2C', color: '#fff' }} />
             <Legend wrapperStyle={{ fontSize: 10, paddingTop: 2 }} iconSize={7}/>
-            {(widget.datasets||[]).map((ds,i)=><Bar key={ds.dataKey} stackId="total" dataKey={ds.dataKey} name={ds.name} fill={roleColor[ds.role||'primary']||COLORS[i%COLORS.length]} maxBarSize={data.length <= 1 ? 30 : 34} radius={[3,3,3,3]}/>) }
+            {(widget.datasets||[]).map((ds,i)=><Bar key={ds.dataKey} stackId="total" dataKey={ds.dataKey} name={ds.name} fill={roleColor[ds.role||'primary']||COLORS[i%COLORS.length]} maxBarSize={data.length <= 1 ? 30 : 34} radius={[3,3,3,3]} isAnimationActive={false}/>) }
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -115,8 +115,8 @@ function renderWidget(widget: DashboardWidget) {
           <Tooltip formatter={(v:any)=>fmt(v)} contentStyle={{ fontSize: 11, borderRadius: 10, border: '0', background: '#102A2C', color: '#fff' }} />
           <Legend wrapperStyle={{ fontSize: 10, paddingTop: 2 }} iconSize={7}/>
           {(widget.datasets||[]).map((ds,i)=> ds.type === 'line'
-            ? <Line key={ds.dataKey} yAxisId={ds.axis === 'right' ? 'right' : 'left'} type="monotone" dataKey={ds.dataKey} name={ds.name} stroke={roleColor[ds.role||'primary']||COLORS[i]} strokeWidth={2.2} dot={false}/>
-            : <Bar key={ds.dataKey} yAxisId={ds.axis === 'right' ? 'right' : 'left'} dataKey={ds.dataKey} name={ds.name} fill={roleColor[ds.role||'primary']||COLORS[i]} radius={[6,6,0,0]} maxBarSize={data.length <= 1 ? 42 : 54}/>
+            ? <Line key={ds.dataKey} yAxisId={ds.axis === 'right' ? 'right' : 'left'} type="monotone" dataKey={ds.dataKey} name={ds.name} stroke={roleColor[ds.role||'primary']||COLORS[i]} strokeWidth={2.2} dot={false} isAnimationActive={false}/>
+            : <Bar key={ds.dataKey} yAxisId={ds.axis === 'right' ? 'right' : 'left'} dataKey={ds.dataKey} name={ds.name} fill={roleColor[ds.role||'primary']||COLORS[i]} radius={[6,6,0,0]} maxBarSize={data.length <= 1 ? 42 : 54} isAnimationActive={false}/>
           )}
         </ComposedChart>
       </ResponsiveContainer>
